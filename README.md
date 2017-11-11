@@ -291,6 +291,4 @@ El modelo propuesto es una opcion util para la inversion y cobertura en energia 
 
 Las funciones utilizadas para modelar los subyacentes cuentan con una componente aleatoria cada una. Como puede verse a partir de los resultados de las simulaciones del instrumento, el efecto de esa componente aleatoria en su comportamiento es claro y lo hace lo suficientemente estocastico para evitar especulacion.
 
-# En el mismo correo que contiene este archivo se envia el archivo Markdown del documento y la fuente de los datos (.xlsx) en caso de querer profundizar mas sobre es codigo. No se incluyeron tildes para evitar problemas con el knit.
-
 
