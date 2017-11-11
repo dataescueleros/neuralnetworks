@@ -1,0 +1,65 @@
+library(MASS)
+datos<-Boston
+head(datos)
+apply(datos,2,function(x) sum(is.na(x))) # Para aplicar una funcion a todo (como un for)
+
+index<-sample(1:nrow(datos),round(0.75*nrow(datos))) # Separa el 75% para entrenamiento y validacion
+train<-datos[index,] # Coge de la matriz datos los datos de index
+test<-datos[-index,] # Coge de la matriz los datos diferentes a los de index (25%)
+
+# Ajusta una funcion lineal para los datos de entrenamiento
+lm.fit<-glm(medv~.,data=train) # El punto despues de ~ hace regresion con todo el resto de los datos
+summary(lm.fit) # La regresion se hace con los de entrenamiento
+
+# Ajuste de los datos de prueba al modelo lineal ajustado
+pr.lm<-predict(lm.fit,test) # Reviso la regresion que habia hecho con los datos de prueba
+MSE.lm<-sum((pr.lm-test$medv)^2)/nrow(test)
+maxs<-apply(datos,2,max)
+mins<-apply(datos,2,min)
+
+# Pre-procesamiento de los datos para la red neuronal
+scaled<-as.data.frame(scale(datos,center=mins,scale=maxs-mins)) # Normalizamos las variables para
+            # que sean comparables entre si, (X-min)/(max-min). Hace que todos los valores de las 
+            # variables empiecen en 0 y esten entre 0 y 1
+train_<-scaled[index,]
+test_<-scaled[-index,] # Vuelvo a hacer las variables de entrenamiento y prueba
+                          # con las variables normalizadas
+
+library(neuralnet)
+n<-names(train_) # Saca los nombres de los datos de entrenamiento normalizados
+f<-as.formula(paste("medv ~",paste(n[!n %in% "medv"],collapse=" + ")))
+                # la parte - n[!n %in% "medv"] - coge de n, todo lo diferente a medv
+
+# creacion y entrenamiento de la red neuronal
+nn<-neuralnet(f,data=train_,hidden=c(5,3),linear.output = T)
+plot(nn)
+
+# Prueba de la red con los datos de prueba
+pr.nn<-compute(nn,test_[,1:13])
+pr.nn_<-pr.nn$net.result*(max(datos$medv)-min(datos$medv))+min(datos$medv) # Escalamos las 
+                                              # variables, devolvemos la normalizacion
+test.r<-(test_$medv)*(max(datos$medv)-min(datos$medv))+min(datos$medv)
+
+MSE.nn<-sum((test.r-pr.nn_)^2)/nrow(test_)
+
+# Comparacion de errores de la aproximacion lineal y la red
+print(paste(MSE.lm,MSE.nn))
+
+# La red probablemente tenga una capacidad mas amplia de pronosticar
+
+# Graficos
+par(mfrow=c(1,2))
+plot(test$medv,pr.nn_,col='red',main='Real vs predicted NN',pch=18,cex=0.7)
+abline(0,1,lwd=2)
+legend('bottomright',legend='NN',pch=18,col='red', bty='n')
+plot(test$medv,pr.lm,col='blue',main='Real vs predicted lm',pch=18, cex=0.7)
+abline(0,1,lwd=2)
+legend('bottomright',legend='LM',pch=18,col='blue', bty='n', cex=.95)
+
+par(mfrow=c(1,1))
+plot(test$medv,pr.nn_,col='red',main='Real vs predicted NN',pch=18,cex=0.7)
+points(test$medv,pr.lm,col='blue',pch=18,cex=0.7)
+abline(0,1,lwd=2)
+legend('bottomright',legend=c('NN','LM'),pch=18,col=c('red','blue'))
+
+
